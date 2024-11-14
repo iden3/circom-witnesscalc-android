@@ -1,9 +1,8 @@
 # circomwitnesscalc
 
----
+⚠️ This repository is currently WIP and experimental ⚠️
 
-This library is Android Kotlin wrapper for the [circomwitnesscalc](https://github.com/iden3/circom-witnesscalc). It enables the
-generation of witnesses for proof generation specified circuits within an Android environment.
+CircomWitnesscalc is an iOS wrapper for the [iden3/circom-witnesscalc](https://github.com/iden3/circom-witnesscalc) library
 
 ## Platform Support
 
