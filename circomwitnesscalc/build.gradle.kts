@@ -87,9 +87,14 @@ mavenPublishing {
         url.set("https://github.com/iden3/android-rapidsnark")
         licenses {
             license {
-                name.set("GNU General Public License v3.0")
-                url.set("https://github.com/iden3/android-rapidsnark/blob/main/COPYING")
-                distribution.set("https://github.com/iden3/android-rapidsnark/blob/main/COPYING")
+                name.set("Apache License Version 2.0")
+                url.set("https://github.com/iden3/android-rapidsnark/blob/main/LICENSE-APACHE")
+                distribution.set("https://github.com/iden3/android-rapidsnark/blob/main/LICENSE-APACHE")
+            }
+            license {
+                name.set("MIT License")
+                url.set("https://github.com/iden3/android-rapidsnark/blob/main/LICENSE-MIT")
+                distribution.set("https://github.com/iden3/android-rapidsnark/blob/main/LICENSE-MIT")
             }
         }
         developers {

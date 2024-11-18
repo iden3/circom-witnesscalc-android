@@ -45,4 +45,4 @@ To run the example project, clone the repo, and run `app` module application.
 
 ## License
 
-android-rapidsnark is part of the iden3 project 0KIMS association. Please check the [COPYING](./COPYING) file for more details.
+circom-witnesscalc-android is part of the iden3 project and licensed under MIT and APACHE 2.0 licences. Please check the [LICENSE-MIT](./LICENSE-MIT.txt) and [LICENSE-APACHE](./LICENSE-APACHE.txt) files for more details.
