@@ -11,11 +11,14 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContract
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -27,11 +30,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.documentfile.provider.DocumentFile
 import io.iden3.circomwitnesscalc.WitnesscalcError
 import io.iden3.circomwitnesscalc.calculateWitness
 import io.iden3.circomwitnesscalc_example.ui.theme.circomwitnesscalc_exampleTheme
+import io.iden3.rapidsnark.groth16Prove
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStream
@@ -43,11 +48,15 @@ class MainActivity : ComponentActivity() {
     private var inputs: String? = null
     private var graphDataUri = mutableStateOf<String?>(null)
     private var graphData: ByteArray? = null
+    private var zkeyUri = mutableStateOf<String?>(null)
+    private var zkey: ByteArray? = null
 
     private var witness: ByteArray? = null
     private var timestamp = mutableLongStateOf(0L)
     private val hasWitness = mutableStateOf(false)
     private var errorMessage = mutableStateOf("")
+
+    private val proof = mutableStateOf("")
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -85,7 +94,22 @@ class MainActivity : ComponentActivity() {
                         error = errorMessage,
                         onGenerate = { calcWitness() },
                         onShare = { shareWitness() },
-                        modifier = Modifier.padding(innerPadding)
+                        modifier = Modifier.padding(innerPadding),
+                        onZkeySelected = {
+                            val documentFile = DocumentFile.fromSingleUri(baseContext, it)
+                            zkeyUri.value = documentFile?.name
+
+                            zkey = contentResolver.openInputStream(it)?.loadIntoBytes()
+                        },
+                        resetZkey = {
+                            zkeyUri.value = null
+                            zkey = null
+                        },
+                        zkeyUri = zkeyUri,
+                        generateProof = {
+                            generateProof()
+                        },
+                        proof = proof,
                     )
                 }
             }
@@ -144,6 +168,20 @@ class MainActivity : ComponentActivity() {
 
         startActivity(Intent.createChooser(intentShareFile, "Save witness"))
     }
+
+    private fun generateProof() {
+        val witness = this.witness!!
+
+        val zkey = if (this.zkey != null) {
+            this.zkey!!
+        } else {
+            assets.open("authV2.zkey").loadIntoBytes()
+        }
+
+        val proof = groth16Prove(zkey, witness)
+
+        this.proof.value = proof.proof + "\n" + proof.publicSignals
+    }
 }
 
 
@@ -179,10 +217,26 @@ fun Example(
     error: MutableState<String>,
     onGenerate: () -> Unit,
     onShare: () -> Unit,
+    onZkeySelected: (Uri) -> Unit,
+    resetZkey: () -> Unit,
+    zkeyUri: MutableState<String?>,
+    generateProof: () -> Unit,
+    proof: MutableState<String>,
     modifier: Modifier = Modifier
 ) {
+    val scrollState = ScrollState(0)
+
+    val hasCustomZkey = zkeyUri.value != null
     val hasCustomInputs = inputsUri.value != null
     val hasCustomGraphData = graphDataUri.value != null
+
+    val zkeyPicker = rememberLauncherForActivityResult(
+        contract = GetCustomContents(),
+        onResult = { uris ->
+            if (uris.isNotEmpty()) {
+                onZkeySelected(uris.first())
+            }
+        })
 
     val inputsPicker = rememberLauncherForActivityResult(
         contract = GetCustomContents(),
@@ -205,8 +259,19 @@ fun Example(
         verticalArrangement = Arrangement.Center,
         modifier = Modifier
             .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(scrollState)
             .then(modifier)
     ) {
+        Text(if (hasCustomZkey) "Custom zkey from ${zkeyUri.value}" else "Default authV2 zkey selected")
+        Row {
+            Button(onClick = { zkeyPicker.launch("application/octet-stream") }) {
+                Text("Select zkey")
+            }
+            Button(onClick = resetZkey, enabled = zkeyUri.value != null) {
+                Text("Reset zkey")
+            }
+        }
         Text(if (hasCustomInputs) "Custom inputs from ${inputsUri.value}" else "Default authV2 inputs selected")
         Row {
             Button(onClick = { inputsPicker.launch("application/json") }) {
@@ -236,6 +301,14 @@ fun Example(
         if (hasWitness.value)
             Button(onClick = onShare) {
                 Text("Share")
+            }
+        if (hasWitness.value)
+            Button(onClick = generateProof) {
+                Text("Generate proof")
+            }
+        if (proof.value.isNotBlank())
+            SelectionContainer {
+                Text("Proof: ${proof.value}")
             }
     }
 }
@@ -304,7 +377,12 @@ fun ExamplePreview() {
             timestamp = mutableLongStateOf(697),
             error = mutableStateOf(""),
             onGenerate = {},
-            onShare = {}
+            onShare = {},
+            zkeyUri = mutableStateOf(""),
+            onZkeySelected = {},
+            resetZkey = {},
+            generateProof = {},
+            proof = mutableStateOf(""),
         )
     }
 }
