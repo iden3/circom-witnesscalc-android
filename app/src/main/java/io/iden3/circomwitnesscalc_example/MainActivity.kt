@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.provider.DocumentsContract
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -37,6 +39,7 @@ import io.iden3.circomwitnesscalc.WitnesscalcError
 import io.iden3.circomwitnesscalc.calculateWitness
 import io.iden3.circomwitnesscalc_example.ui.theme.circomwitnesscalc_exampleTheme
 import io.iden3.rapidsnark.groth16Prove
+import io.iden3.rapidsnark.groth16ProveWithZKeyFilePath
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStream
@@ -48,7 +51,7 @@ class MainActivity : ComponentActivity() {
     private var inputs: String? = null
     private var graphDataUri = mutableStateOf<String?>(null)
     private var graphData: ByteArray? = null
-    private var zkeyUri = mutableStateOf<String?>(null)
+    private var zkeyUri = mutableStateOf<Uri?>(null)
     private var zkey: ByteArray? = null
 
     private var witness: ByteArray? = null
@@ -97,9 +100,9 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.padding(innerPadding),
                         onZkeySelected = {
                             val documentFile = DocumentFile.fromSingleUri(baseContext, it)
-                            zkeyUri.value = documentFile?.name
+                            zkeyUri.value = documentFile?.uri
 
-                            zkey = contentResolver.openInputStream(it)?.loadIntoBytes()
+                            copyZkeyToCache(it)
                         },
                         resetZkey = {
                             zkeyUri.value = null
@@ -112,6 +115,20 @@ class MainActivity : ComponentActivity() {
                         proof = proof,
                     )
                 }
+            }
+        }
+    }
+
+    private fun copyZkeyToCache(zkeyUri: Uri) {
+        cacheDir.mkdir()
+
+        val zkeyFile = File(cacheDir, zkeyUri.pathSegments.last().split('/').last())
+        if (zkeyFile.exists()) return
+        zkeyFile.createNewFile()
+
+        contentResolver.openInputStream(zkeyUri)?.use { input ->
+            zkeyFile.outputStream().use { output ->
+                input.copyTo(output)
             }
         }
     }
@@ -172,13 +189,14 @@ class MainActivity : ComponentActivity() {
     private fun generateProof() {
         val witness = this.witness!!
 
-        val zkey = if (this.zkey != null) {
-            this.zkey!!
-        } else {
-            assets.open("authV2.zkey").loadIntoBytes()
-        }
+        val zkeyUri = this.zkeyUri.value!!
 
-        val proof = groth16Prove(zkey, witness)
+        val zkeyFile = File(cacheDir, zkeyUri.pathSegments.last().split('/').last())
+
+        val proof = groth16ProveWithZKeyFilePath(
+            zkeyPath = zkeyFile.path,
+            witness = witness
+        )
 
         this.proof.value = proof.proof + "\n" + proof.publicSignals
     }
@@ -219,7 +237,7 @@ fun Example(
     onShare: () -> Unit,
     onZkeySelected: (Uri) -> Unit,
     resetZkey: () -> Unit,
-    zkeyUri: MutableState<String?>,
+    zkeyUri: MutableState<Uri?>,
     generateProof: () -> Unit,
     proof: MutableState<String>,
     modifier: Modifier = Modifier
@@ -378,7 +396,7 @@ fun ExamplePreview() {
             error = mutableStateOf(""),
             onGenerate = {},
             onShare = {},
-            zkeyUri = mutableStateOf(""),
+            zkeyUri = mutableStateOf(Uri.EMPTY),
             onZkeySelected = {},
             resetZkey = {},
             generateProof = {},
