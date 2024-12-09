@@ -45,6 +45,7 @@ import java.io.File
 import java.io.InputStream
 import java.io.InputStreamReader
 
+var executionTime = 0
 
 class MainActivity : ComponentActivity() {
     private var inputsUri = mutableStateOf<String?>(null)
@@ -83,7 +84,7 @@ class MainActivity : ComponentActivity() {
                         inputsUri = inputsUri,
                         onGraphDataSelected = {
                             val documentFile = DocumentFile.fromSingleUri(baseContext, it)
-                            inputsUri.value = documentFile?.name
+                            graphDataUri.value = documentFile?.name
 
                             graphData = contentResolver.openInputStream(it)?.loadIntoBytes()
                         },
@@ -193,12 +194,17 @@ class MainActivity : ComponentActivity() {
 
         val zkeyFile = File(cacheDir, zkeyUri.pathSegments.last().split('/').last())
 
+        val executionStart = System.currentTimeMillis()
+
         val proof = groth16ProveWithZKeyFilePath(
             zkeyPath = zkeyFile.path,
             witness = witness
         )
 
-        this.proof.value = proof.proof + "\n" + proof.publicSignals
+        executionTime = (System.currentTimeMillis() - executionStart).toInt()
+
+        this.proof.value =
+            "Proof calculated in $executionTime ms\n" + proof.proof + "\n" + proof.publicSignals
     }
 }
 
