@@ -190,14 +190,23 @@ class MainActivity : ComponentActivity() {
     private fun generateProof() {
         val witness = this.witness!!
 
-        val zkeyUri = this.zkeyUri.value!!
-
-        val zkeyFile = File(cacheDir, zkeyUri.pathSegments.last().split('/').last())
+        val zkeyPath = if (zkeyUri.value == null) {
+            val authV2File = File(cacheDir, "authV2.zkey")
+            if (!authV2File.exists()) {
+                val authV2InputStream = assets.open("authV2.zkey")
+                val authV2OutputStream = authV2File.outputStream()
+                authV2InputStream.copyTo(authV2OutputStream)
+            }
+            authV2File.path
+        } else {
+            val fileName = zkeyUri.value!!.pathSegments.last().split('/').last()
+            File(cacheDir, fileName).path
+        }
 
         val executionStart = System.currentTimeMillis()
 
         val proof = groth16ProveWithZKeyFilePath(
-            zkeyPath = zkeyFile.path,
+            zkeyPath = zkeyPath,
             witness = witness
         )
 
