@@ -34,6 +34,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import androidx.core.net.toFile
+import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import io.iden3.circomwitnesscalc.WitnesscalcError
 import io.iden3.circomwitnesscalc.calculateWitness
@@ -100,10 +102,7 @@ class MainActivity : ComponentActivity() {
                         onShare = { shareWitness() },
                         modifier = Modifier.padding(innerPadding),
                         onZkeySelected = {
-                            val documentFile = DocumentFile.fromSingleUri(baseContext, it)
-                            zkeyUri.value = documentFile?.uri
-
-                            copyZkeyToCache(it)
+                            zkeyUri.value = copyZkeyToCache(it)
                         },
                         resetZkey = {
                             zkeyUri.value = null
@@ -120,11 +119,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun copyZkeyToCache(zkeyUri: Uri) {
+    private fun copyZkeyToCache(zkeyUri: Uri): Uri {
         cacheDir.mkdir()
 
         val zkeyFile = File(cacheDir, zkeyUri.pathSegments.last().split('/').last())
-        if (zkeyFile.exists()) return
+        if (zkeyFile.exists()) return zkeyFile.toUri()
         zkeyFile.createNewFile()
 
         contentResolver.openInputStream(zkeyUri)?.use { input ->
@@ -132,6 +131,8 @@ class MainActivity : ComponentActivity() {
                 input.copyTo(output)
             }
         }
+
+        return zkeyFile.toUri()
     }
 
     private fun calcWitness() {
@@ -199,8 +200,7 @@ class MainActivity : ComponentActivity() {
             }
             authV2File.path
         } else {
-            val fileName = zkeyUri.value!!.pathSegments.last().split('/').last()
-            File(cacheDir, fileName).path
+            zkeyUri.value!!.toFile().path
         }
 
         val executionStart = System.currentTimeMillis()
