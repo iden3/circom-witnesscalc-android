@@ -6,8 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.provider.DocumentsContract
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -41,7 +39,6 @@ import io.iden3.circomwitnesscalc.WitnesscalcError
 import io.iden3.circomwitnesscalc.calculateWitness
 import io.iden3.circomwitnesscalc_example.ui.theme.circomwitnesscalc_exampleTheme
 import io.iden3.rapidsnark.groth16Prove
-import io.iden3.rapidsnark.groth16ProveWithZKeyFilePath
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStream
@@ -205,7 +202,7 @@ class MainActivity : ComponentActivity() {
 
         val executionStart = System.currentTimeMillis()
 
-        val proof = groth16ProveWithZKeyFilePath(
+        val proof = groth16Prove(
             zkeyPath = zkeyPath,
             witness = witness
         )
