@@ -78,7 +78,7 @@ dependencies {
 }
 
 mavenPublishing {
-    coordinates("io.iden3", "circomwitnesscalc", "0.0.1-alpha.2")
+    coordinates("io.iden3", "circomwitnesscalc", "0.0.1-alpha.3")
 
     pom {
         name.set("circomwitnesscalc")
