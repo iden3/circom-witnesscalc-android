@@ -28,6 +28,12 @@ android {
         }
     }
 
+    packaging {
+        jniLibs {
+            keepDebugSymbols.add("**/*.so")
+        }
+    }
+
     sourceSets {
         getByName("main") {
             java.srcDir("src/main/java")
