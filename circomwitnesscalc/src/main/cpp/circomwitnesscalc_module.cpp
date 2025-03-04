@@ -55,10 +55,21 @@ JNIEXPORT jint JNICALL Java_io_iden3_circomwitnesscalc_WitnesscalcJniBridge_calc
     // Handle status and error
     // if something happened - write error to the error message
     if (status.code != OK) {
-        char *nativeErrorMsg = (char *) env->GetByteArrayElements(errorMsg, nullptr);
-        long len = std::min((long) errorMsgMaxSize, (long) strlen(status.error_msg));
-        env->SetByteArrayRegion(errorMsg, 0, (int) len, (jbyte *) status.error_msg);
-        env->ReleaseByteArrayElements(errorMsg, (jbyte *) nativeErrorMsg, 0);
+        // Get the error message from status
+        const char* errorString = status.error_msg;
+        // Get the length of the error message (safely)
+        size_t errorLength = errorString ? strlen(errorString) : 0;
+        // Ensure we don't exceed the maximum buffer size
+        errorLength = (errorLength < errorMsgMaxSize) ? errorLength : errorMsgMaxSize - 1;
+
+        // Copy the error message to the Java byte array
+        env->SetByteArrayRegion(errorMsg, 0, errorLength, (jbyte*)errorString);
+
+        // Add a null terminator if there's room
+        if (errorLength < errorMsgMaxSize) {
+            jbyte nullByte = 0;
+            env->SetByteArrayRegion(errorMsg, errorLength, 1, &nullByte);
+        }
     }
     gw_free_status(&status);
 
