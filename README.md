@@ -17,7 +17,7 @@ CircomWitnesscalc is an Android wrapper for the [iden3/circom-witnesscalc](https
 Add 
 
 ```
-implementation("io.iden3:circomwitnesscalc:0.0.1-alpha.3")
+implementation("io.iden3:circomwitnesscalc:0.0.1-alpha.4")
 ```
 
 to the `build.gradle`
