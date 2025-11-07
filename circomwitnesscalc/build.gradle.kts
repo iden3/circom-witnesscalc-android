@@ -20,6 +20,7 @@ android {
             cmake {
                 cppFlags += "-O2 -frtti -fexceptions -Wall -fstack-protector-all"
                 abiFilters += listOf("x86_64", "arm64-v8a")
+                arguments += listOf("-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON")
             }
         }
         ndk {
