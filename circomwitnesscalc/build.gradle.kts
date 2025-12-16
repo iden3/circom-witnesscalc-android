@@ -20,6 +20,7 @@ android {
             cmake {
                 cppFlags += "-O2 -frtti -fexceptions -Wall -fstack-protector-all"
                 abiFilters += listOf("x86_64", "arm64-v8a")
+                arguments += listOf("-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON")
             }
         }
         ndk {
@@ -84,7 +85,7 @@ dependencies {
 }
 
 mavenPublishing {
-    coordinates("io.iden3", "circomwitnesscalc", "0.0.1-alpha.4")
+    coordinates("io.iden3", "circomwitnesscalc", "0.0.1-beta.1")
 
     pom {
         name.set("circomwitnesscalc")
